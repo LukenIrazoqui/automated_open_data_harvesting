@@ -1,53 +1,46 @@
-CREATE DATABASE aspirateur;
-
-\c aspirateur
-
-SET client_encoding = 'UTF8';
-
-CREATE TABLE bvbv (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(32) NOT NULL
-);
-
 INSERT INTO bvbv (name) VALUES 
 ('bien vivre, bien vieillir'), 
 ('bien vivre'), 
-('bien vieillir');
+('bien vieillir'),
+('Aucune information');
 
-CREATE TABLE branches (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL
-);
+
 
 INSERT INTO branches (name) VALUES 
 ('indépendence'),
 ('environnement'),
-('informations générales');
+('informations générales'),
+('Aucune information');
 
-CREATE TABLE sub_branches (
-    id BIGSERIAL PRIMARY KEY,
-    branch_id BIGINT,
-    name VARCHAR(64) NOT NULL,
-    FOREIGN KEY (branch_id) REFERENCES branches(id)
-);
 
-INSERT INTO sub_branches (branch_id, name) VALUES 
-(1, 'mobilité'),
-(1, 'capacité de travail / éducation et comprétences'),
-(2, 'sécurité'),
-(2, 'environnement domestique'),
-(2, 'resources financières'),
-(2, 'soins de santé et soins sociaux'),
-(2, 'environnement physique'),
-(2, 'infrastructure'),
-(2, 'niveau d''urbanisme'),
-(3, 'adresse'),
-(3, 'population');
 
-CREATE TABLE precision (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64)
-);
+INSERT INTO sub_branches (name) VALUES 
+('mobilité'),
+('capacité de travail / éducation et comprétences'),
+('sécurité'),
+('environnement domestique'),
+('resources financières'),
+('soins de santé et soins sociaux'),
+('environnement physique'),
+('infrastructure'),
+('niveau d''urbanisme'),
+('adresse'),
+('population'),
+('Aucune information');
+
+INSERT INTO branches_sub_branches (id_branches, id_sub_branches) VALUES 
+(1, 1),
+(1, 2),
+(2, 3),
+(2, 4),
+(2, 5),
+(2, 6),
+(2, 7),
+(2, 8),
+(2, 9),
+(3, 10),
+(3, 11);
+
 
 INSERT INTO precision (name) VALUES
 ('aspect précis'),
@@ -60,12 +53,10 @@ INSERT INTO precision (name) VALUES
 ('eau potable'),
 ('gaz'),
 ('reseaux d''assainissement'),
-('météo');
+('météo'),
+('Aucune information');
 
-CREATE TABLE region (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(32) NOT NULL
-);
+
 
 INSERT INTO region (name) VALUES
 ('Landes'),
@@ -74,14 +65,12 @@ INSERT INTO region (name) VALUES
 ('Brocas'),
 ('Toulouse'),
 ('Dax'),
-('Garein');
+('Garein'),
+('Aucune information');
 
-CREATE TABLE urls (
-    id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL
-);
 
-INSERT INTO urls (name) VALUES
+
+INSERT INTO urls (url) VALUES
 ('https://www.pigma.org/fr/dataset/datasets/4600/resource/10225/download/'),
 ('https://www.pigma.org/fr/dataset/datasets/7421/resource/15101/download/'),
 ('https://opendata.caissedesdepots.fr/api/explore/v2.1/catalog/datasets/logements-et-logements-sociaux-dans-les-departements/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B'),
@@ -108,10 +97,7 @@ INSERT INTO urls (name) VALUES
 ('https://beta.pigma.org/fr/dataset/datasets/76/resource/280/download/'),
 ('https://www.insee.fr/fr/statistiques/fichier/3698339/base-pop-historiques-1876-2021.xlsx');
 
-CREATE TABLE sources (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(128) NOT NULL
-);
+
 
 INSERT INTO sources (name) VALUES
 ('ADACL'),
@@ -134,29 +120,11 @@ INSERT INTO sources (name) VALUES
 ('Département de Landes'),
 ('Open Data Commons (ODbL)'),
 ('GIP ATGERI'),
-('DREAL NOUVELLE-AQUITAINE');
-
-CREATE TABLE datasets (
-    id BIGSERIAL PRIMARY KEY,
-    bvbv_id BIGINT,
-    branch_id BIGINT,
-    sub_branch_id BIGINT,
-    precision_id BIGINT,
-    dataset_name VARCHAR(256) NOT NULL,
-    source_id BIGINT,
-    region_id BIGINT,
-    url_id BIGINT,
-    FOREIGN KEY (bvbv_id) REFERENCES bvbv(id),
-    FOREIGN KEY (branch_id) REFERENCES branches(id),
-    FOREIGN KEY (sub_branch_id) REFERENCES sub_branches(id),
-    FOREIGN KEY (precision_id) REFERENCES precision(id),
-    FOREIGN KEY (source_id) REFERENCES sources(id),
-    FOREIGN KEY (region_id) REFERENCES region(id),
-    FOREIGN KEY (url_id) REFERENCES urls(id)
-);
+('DREAL NOUVELLE-AQUITAINE'),
+('Aucune information');
 
 
-INSERT INTO datasets (bvbv_id, branch_id, sub_branch_id, precision_id, dataset_name, source_id, region_id, url_id)
+INSERT INTO datasets (id_bvbv, id_branches, id_sub_branches, id_precision, name, id_sources, id_region, id_urls)
 VALUES
     (1, 2, 3, NULL, 'Landes : SAIP (implantation sirènes)', 2, 1, 1),
     (1, 2, 3, NULL, 'landes - Postes d''appel d''urgence', 4, 1, 2),
@@ -184,50 +152,3 @@ VALUES
     (2, 2, 9, NULL, 'Landes : foncier potentiellement disponible dans les zones déjà urbanisées des communes', 21, 1, 23),
     (1, 3, 10, NULL, 'Base adresse locale de la commune de Garein', 1, 7, 24),
     (1, 3, 11, NULL, 'Historique des populations communales', 8, 2, 25);
-
-
-CREATE TABLE url_table_mapping (
-    id SERIAL PRIMARY KEY,
-    url_id BIGINT NOT NULL,
-    table_name VARCHAR(255) NOT NULL, 
-    FOREIGN KEY (url_id) REFERENCES urls(id)
-);
-
-CREATE SCHEMA data;
-
-SELECT
-    d.dataset_name,
-    bvbv.name AS bvbv,
-    branches.name AS branch,
-    sub_branches.name AS sub_branch,
-    precision.name AS precision,
-    sources.name AS source,
-    region.name AS region,
-    urls.name AS url
-FROM
-    datasets d
-LEFT JOIN
-    bvbv ON d.bvbv_id = bvbv.id
-LEFT JOIN
-    branches ON d.branch_id = branches.id
-LEFT JOIN
-    sub_branches ON d.sub_branch_id = sub_branches.id
-LEFT JOIN
-    precision ON d.precision_id = precision.id
-LEFT JOIN
-    sources ON d.source_id = sources.id
-LEFT JOIN
-    region ON d.region_id = region.id
-LEFT JOIN
-    urls ON d.url_id = urls.id
-ORDER BY d.id;
-
-
-
-    (1, 2, 7, 3, 'Base Permanente des Equipements (Ensemble) géolocalisée - France', NULL, 3, 'https://public.opendatasoft.com/explore/dataset/buildingref-france-bpe-all-geolocated/table/?flg=fr&disjunctive.reg_code&disjunctive.dep_code&disjunctive.geocode_quality&disjunctive.equipment_name&disjunctive.category&disjunctive.reg_name&disjunctive.dep_name&disjunctive.epci_name&disjunctive.com_arm_name&disjunctive.com_arm_area_code&sort=equipment_name&refine.dep_code=40&location=9,43.99929,-0.70443'),
-    (1, 2, 7, 4, 'Indice quotidien de qualité de l''air pour les collectivités territoriales pour l''année civile en cours jusqu''au lendemain et l''année précédente complète.', 14, 3, 'https://opendata.atmo-na.org/dataset/indices'),
-    (1, 2, 7, 5, 'Zones d''une carte de bruit stratégique LNU de 2017 à 2022 dans le département des Landes', 15, 1, 'http://catalogue.geo-ide.developpement-durable.gouv.fr/catalogue/srv/fr/catalog.search#/metadata/fr-120066022-jdd-f3f92793-45c4-443f-9d0a-dda582fbcd26'),
-    (1, 2, 8, 7, 'Bus Nouvelle Aquitaine', NULL, 3, 'https://transport.data.gouv.fr/datasets/region/9?locale=en&order_by=most_recent'),
-
-
-
