@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block content %}
+    <div>
+        <h1>Choose a Model</h1>
+        <div class="model-list">
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Bvbv' %}'">BVBV</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Branches' %}'">Branches</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'SubBranches' %}'">Sous-branches</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'BranchesSubBranches' %}'">Liens branches - sous-branches</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Precision' %}'">Precision</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Region' %}'">Region</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Sources' %}'">Sources</div></li>
+            <li class="model-box"><div onclick="location.href='{% url 'view_model_data' 'Urls' %}'">Urls</div></li>
+         </div>
+    </div>
+
+    <div id="model-data-container">
+        {% block model %}
+        {% endblock %}
+    </div>
+
+{% endblock %}

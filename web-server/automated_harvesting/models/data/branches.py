@@ -1,5 +1,5 @@
 from django.db import models
-
+    
 
 class Branches(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -8,3 +8,10 @@ class Branches(models.Model):
     class Meta:
         managed = False
         db_table = 'branches'
+        verbose_name = "Branches"
+    
+    def __str__(self):
+        return self.name 
+
+
+    

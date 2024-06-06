@@ -8,3 +8,7 @@ class Region(models.Model):
     class Meta:
         managed = False
         db_table = 'region'
+        verbose_name = "Régions"
+    
+    def __str__(self):
+        return self.name 

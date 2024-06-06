@@ -10,3 +10,7 @@ class UrlTableMapping(models.Model):
         managed = False
         db_table = 'url_table_mapping'
         unique_together = (('id_urls', 'table_name'),)
+        verbose_name = "Liens url - table"
+
+    def get_urls_name(self):
+        return self.id_urls.name if self.id_urls else None

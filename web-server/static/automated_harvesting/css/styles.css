@@ -1,0 +1,160 @@
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.main {
+    width: 100vw;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.sidenav {
+    position: fixed; 
+    height: 100%;
+    width: 13%;
+    z-index: 1;
+    background-color: #525353;
+    overflow-x: hidden;
+    padding-top: 2%;
+}
+
+.sidenav a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #c0c0c0;
+    display: block;
+}
+
+.sidenav a:hover {
+    color: #f1f1f1;
+}
+
+.content {
+    padding-top: 2%;
+    margin-left: calc(13% + 20px); 
+    margin-right: 20px;
+    flex: 1 1 400px;
+}
+
+
+.model-list {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.model-box {
+    flex: 1 1 150px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    box-sizing: border-box;
+}
+
+.model-box div {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit; 
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.model-box:hover {
+    background-color: #e0e0e0;
+}
+
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 18px;
+    text-align: left;
+}
+
+.styled-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+    font-weight: bold;
+}
+
+.styled-table th, .styled-table td {
+    padding: 12px 15px;
+    border: 1px solid #dddddd;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+
+.styled-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.styled-table th.actions, .styled-table td.actions {
+    width: 1%; 
+    white-space: nowrap;
+    text-align: center; 
+}
+
+.actions-container {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.icon-link {
+    text-decoration: none;
+    color: #009879;
+}
+
+.icon-link:hover {
+    color: #005f5f;
+}
+
+.action-add {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    font-size: 20px;
+}
+
+.actions a,
+.action-add a  {
+    text-decoration: none;
+    color: #000;
+    display: flex;
+    align-items: center;
+}
+
+.actions i,
+.action-add i  {
+    margin-right: 8px;
+}

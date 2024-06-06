@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+
+{% block content %}
+    
+    <h2>{{ verbose_name }}</h2>
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Bvbv</th>
+                <th>Branches</th>
+                <th>Sub-Branches</th>
+                <th>Precision</th>
+                <th>Sources</th>
+                <th>Region</th>
+                <th>Urls</th>
+                <th class="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+                <tr>
+                    <td>{{ obj.id }}</td>   
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.get_bvbv_name }}</td>
+                    <td>{{ obj.get_branches_name }}</td>
+                    <td>{{ obj.get_sub_branches_name }}</td>
+                    <td>{{ obj.get_precision_name }}</td>
+                    <td>{{ obj.get_sources_name }}</td>
+                    <td>{{ obj.get_region_name }}</td>
+                    <td>{{ obj.get_urls_name }}</td>
+                    
+                    <td class="actions">
+                        <div class="actions-container">
+                            <a href="{% url 'modify_dataset' obj.id %}" class="icon-link"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'delete_dataset' obj.id %}" class="icon-link"><i class="fas fa-trash-alt"></i></a>
+                            <a href="{% url 'refresh_dataset' obj.id %}" class="icon-link"><i class="fa-solid fa-arrows-rotate"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>pip install lxml
+    <div class="action-add">
+        <a href="{% url 'add_dataset' %}">
+            <i class="fas fa-plus"></i> Ajouter une donnée
+        </a>
+    </div>
+
+{% endblock %}

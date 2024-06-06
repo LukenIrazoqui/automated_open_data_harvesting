@@ -8,3 +8,7 @@ class Sources(models.Model):
     class Meta:
         managed = False
         db_table = 'sources'
+        verbose_name = "Sources"
+    
+    def __str__(self):
+        return self.name 

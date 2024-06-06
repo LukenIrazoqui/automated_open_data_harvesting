@@ -8,3 +8,7 @@ class Precision(models.Model):
     class Meta:
         managed = False
         db_table = 'precision'
+        verbose_name = "Précisions"
+    
+    def __str__(self):
+        return self.name 

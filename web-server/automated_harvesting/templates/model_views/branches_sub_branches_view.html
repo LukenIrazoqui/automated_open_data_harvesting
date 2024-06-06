@@ -1,0 +1,41 @@
+{% extends 'model_views/list_models.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+
+{% block model %}
+    
+    <h2>{{ verbose_name }}</h2>
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Branch Name</th>
+                <th>Sub-branch Name</th>
+                <th class="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+                <tr>
+                    <td>{{ obj.id }}</td>
+                    <td>{{ obj.get_branch_name }}</td>
+                    <td>{{ obj.get_sub_branch_name }}</td>
+                    <td class="actions">
+                        <div class="actions-container">
+                            <a href="{% url 'modify_record' model_name obj.id %}" class="icon-link"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'delete_record' model_name obj.id %}" class="icon-link"><i class="fas fa-trash-alt"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="actions">
+        <a href="{% url 'add_record' model_name %}">
+            <i class="fas fa-plus"></i> Ajouter une donnée
+        </a>
+    </div>
+
+{% endblock %}

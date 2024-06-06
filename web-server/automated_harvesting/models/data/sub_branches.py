@@ -8,3 +8,7 @@ class SubBranches(models.Model):
     class Meta:
         managed = False
         db_table = 'sub_branches'
+        verbose_name = "Sous-branches"
+    
+    def __str__(self):
+        return self.name 

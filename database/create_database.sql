@@ -60,9 +60,10 @@ ALTER TABLE public.sub_branches OWNER TO postgres;
 -- object: public.branches_sub_branches | type: TABLE --
 -- DROP TABLE IF EXISTS public.branches_sub_branches CASCADE;
 CREATE TABLE public.branches_sub_branches (
+	id bigserial NOT NULL,
 	id_sub_branches bigint NOT NULL,
 	id_branches bigint NOT NULL,
-	CONSTRAINT branches_sub_branches_pk PRIMARY KEY (id_sub_branches,id_branches)
+	CONSTRAINT branches_sub_branches_pk PRIMARY KEY (id)
 );
 -- ddl-end --
 

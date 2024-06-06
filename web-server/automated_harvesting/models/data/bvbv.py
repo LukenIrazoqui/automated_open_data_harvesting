@@ -8,3 +8,8 @@ class Bvbv(models.Model):
     class Meta:
         managed = False
         db_table = 'bvbv'
+        verbose_name = "BVBV"
+
+    
+    def __str__(self):
+        return self.name 
