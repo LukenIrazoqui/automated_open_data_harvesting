@@ -7,6 +7,7 @@ from .views.base_view import base
 
 urlpatterns = [
     path('', base, name='base'),
+    path('analyse/', base, name='base'),
 
     path('models/', list_models, name='list_models'),
 

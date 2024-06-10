@@ -83,14 +83,11 @@ def add_dataset(request):
 def refresh_dataset(request, record_id):
     model = apps.get_model('automated_harvesting', model_name)
     
-
     if request.method == 'POST':
         return redirect('view_datasets')
     
-    
     dataset = get_object_or_404(model, id=record_id)
     
-    # Get the URL from the related Urls model
     if dataset.id_urls and dataset.id_urls.url:
         url = dataset.id_urls.url
         if "data.gouv.fr" in url:

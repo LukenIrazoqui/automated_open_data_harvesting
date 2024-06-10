@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 import xlrd
 from ..db_operations import insert_row, create_table, link_url_table
 from .sanitize_names import sanitize_field_names, sanitize_table_name
+import time
+import psutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,8 +53,12 @@ def process_xls(id, data, table_name):
 
                 create_table(table_data)
 
-                with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+                with ThreadPoolExecutor(max_workers=os.cpu_count() // 2) as executor:
                     for row_idx in range(header_row_index + 1, sheet.nrows):
+                        while psutil.virtual_memory().percent >= 80:
+                            print("Memory usage is too high, waiting...")
+                            time.sleep(1)
+
                         row = sheet.row_values(row_idx)
                         if not any(row):
                             continue

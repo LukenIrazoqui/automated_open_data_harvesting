@@ -5,6 +5,8 @@ from io import BytesIO
 import openpyxl
 from ..db_operations import insert_row, create_table, link_url_table
 from .sanitize_names import sanitize_field_names, sanitize_table_name
+import time
+import psutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,13 +30,17 @@ def process_xlsx(id, data, table_name):
             ws = wb[sheet_name]
 
             # Detect header row
-            header_row_index = detect_header_row(ws)
+            header_row_index = detect_header_row(ws) + 1
             if header_row_index is None:
                 logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")
                 continue
 
             # Read field names from the detected header row
             field_names = sanitize_field_names([cell for cell in ws[header_row_index]])
+
+            
+            print(f"Field_names: {field_names}")
+            print(f"Number of fields: {len(field_names)}")
 
             sheet_table_name = f"{table_name}_{sanitize_table_name(sheet_name)}"
 
@@ -46,11 +52,13 @@ def process_xlsx(id, data, table_name):
             }
 
             try:
-
                 create_table(table_data)
 
-                with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+                with ThreadPoolExecutor(max_workers=os.cpu_count() // (3/4)) as executor:
                     for row in ws.iter_rows(min_row=header_row_index + 1, values_only=True):
+                        while psutil.virtual_memory().percent >= 80:
+                            print("Memory usage is too high, waiting...")
+                            time.sleep(1)
                         if not any(row):
                             continue
 

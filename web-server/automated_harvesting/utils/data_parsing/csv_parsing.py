@@ -6,6 +6,8 @@ from io import StringIO
 import pandas as pd
 from ..db_operations import insert_row, create_table, link_url_table
 from .sanitize_names import sanitize_field_names, sanitize_table_name
+import time
+import psutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,56 +53,57 @@ def process_csv(id, data, table_name):
         delimiter = detect_delimiter(csv_file)
         csv_file.seek(0)
 
-        workbook = csv.reader(csv_file, delimiter=delimiter)
-        for sheet_data in workbook:
-            sheet_name = sheet_data[0]
-            sheet_content = sheet_data[1]
+        header_row_index = detect_header_row(csv_file, delimiter)
+        if header_row_index is None:
+            raise ValueError(f"No header row detected in '{table_name}'.")
+        csv_file.seek(0)
 
-            sheet_csv_file = StringIO(sheet_content)
+        # Skip rows before the header row
+        for _ in range(header_row_index):
+            next(csv_file)
 
-            header_row_index = detect_header_row(csv_file, delimiter)
-            if header_row_index is None:
-                raise ValueError(f"No header row detected in sheet '{sheet_name}'.")
+        csv_data = csv.DictReader(csv_file, delimiter=delimiter)
+        field_names = sanitize_field_names(csv_data.fieldnames)
 
-            for _ in range(header_row_index):
-                next(sheet_csv_file)
 
-            csv_data = csv.DictReader(sheet_csv_file, delimiter=delimiter)
-            field_names = sanitize_field_names(csv_data.fieldnames)
+        print(f"Field_names: {field_names}")
+        print(f"Number of fields: {len(field_names)}")
 
-            sheet_table_name = f"{table_name}_{sanitize_table_name(sheet_name)}"
+        table_data = {
+            "schema": "data",
+            "name": table_name,
+            "field_names": field_names,
+            "id" : id
+        }
 
-            table_data = {
-                "schema": "data",
-                "name": sheet_table_name,
-                "field_names": field_names,
-                "id" : id
-            }
+        try:
+            create_table(table_data)
+        except Exception as e:
+            logger.error(f"Error creating table {table_name}: {e}")
+            raise
 
-            try:
 
-                create_table(table_data)
+        with ThreadPoolExecutor(max_workers=os.cpu_count() // 2) as executor:
+            for row in csv_data:
+                while psutil.virtual_memory().percent >= 80:
+                    print("Memory usage is too high, waiting...")
+                    time.sleep(1)
+                            
+                if all(pd.isnull(value) for value in row.values()):
+                    continue
 
-                with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-                    for row in csv_data:
-                        if row.isnull().all():
-                            continue
+                values = [str(value) if pd.notnull(value) else '' for value in row.values()]
+                if len(values) != len(field_names):
+                    raise ValueError("Number of values in row doesn't match number of fields")
 
-                        values = [str(value) if pd.notnull(value) else '' for value in row.values()]
-                        if len(values) != len(field_names):
-                            raise ValueError("Number of values in row doesn't match number of fields")
+                insert_data = {
+                    "schema": "data",
+                    "name": table_name,
+                    "field_names": field_names,
+                    "data": values
+                }
+                executor.submit(insert_row, insert_data)
 
-                        insert_data = {
-                            "schema": "data",
-                            "name": sheet_table_name,
-                            "field_names": field_names,
-                            "data": values
-                        }
-                        executor.submit(insert_row, insert_data)
-
-            except Exception as e:
-                logger.error(f"Error creating table {sheet_table_name}: {e}")
-                continue
 
     except Exception as e:
         logger.error(f"Error processing CSV: {e}")

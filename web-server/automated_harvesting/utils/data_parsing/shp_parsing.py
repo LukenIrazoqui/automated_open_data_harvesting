@@ -5,6 +5,8 @@ import shapefile
 from io import BytesIO
 from ..db_operations import insert_row, create_table, link_url_table
 from .sanitize_names import sanitize_field_names
+import time
+import psutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,8 +31,12 @@ def process_shp(id, data, table_name):
 
         create_table(table_data)
 
-        with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        with ThreadPoolExecutor(max_workers=os.cpu_count() // 2) as executor:
             for record in sf.records():
+                while psutil.virtual_memory().percent >= 80:
+                    print("Memory usage is too high, waiting...")
+                    time.sleep(1)
+                            
                 values = [str(value) for value in record]
 
                 insert_data = {
