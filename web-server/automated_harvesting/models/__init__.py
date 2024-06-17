@@ -1,4 +1,5 @@
 from .data.branches import Branches
+from .data.table_names import TableNames
 from .data.branches_sub_branches import BranchesSubBranches
 from .data.bvbv import Bvbv
 from .data.datasets import Datasets

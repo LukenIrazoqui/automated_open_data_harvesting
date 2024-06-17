@@ -54,11 +54,12 @@ def process_xlsx(id, data, table_name):
             try:
                 create_table(table_data)
 
-                with ThreadPoolExecutor(max_workers=os.cpu_count() // (3/4)) as executor:
+                with ThreadPoolExecutor(max_workers=os.cpu_count() // 2) as executor:
                     for row in ws.iter_rows(min_row=header_row_index + 1, values_only=True):
                         while psutil.virtual_memory().percent >= 80:
                             print("Memory usage is too high, waiting...")
                             time.sleep(1)
+
                         if not any(row):
                             continue
 

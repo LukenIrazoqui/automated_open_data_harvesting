@@ -11,6 +11,7 @@ def get_attributes(obj):
 @register.filter
 def get_values(obj):
     return [getattr(obj, field.name) for field in obj._meta.fields]
+
 class Urls(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.TextField()
