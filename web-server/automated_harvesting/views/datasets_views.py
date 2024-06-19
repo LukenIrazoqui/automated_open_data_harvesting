@@ -1,12 +1,10 @@
-from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
 from django.apps import apps
 from django.http import Http404
-from django.forms import modelform_factory, ModelChoiceField
-from collections import defaultdict
+from django.forms import modelform_factory
 from ..forms import DatasetFilterForm
-from urllib.parse import urlencode
 from django.urls import reverse
+import threading
 
 from ..utils.url_handler import handle_data_gouv, handle_url
 
@@ -112,9 +110,11 @@ def refresh_dataset(request, record_id):
         id = dataset.id_urls.id
         url = dataset.id_urls.url
         if "data.gouv.fr" in url:
-            handle_data_gouv(id, url)
+            thread = threading.Thread(target=handle_data_gouv, args=(id, url))
+            thread.start()
         else:
-            handle_url(id, url)
+            thread = threading.Thread(target=handle_url, args=(id, url))
+            thread.start()
     
     query_string = request.GET.urlencode()
     redirect_url = f"{reverse('view_datasets')}?{query_string}"

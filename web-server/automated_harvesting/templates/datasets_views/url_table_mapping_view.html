@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>Datasets Details</h2>
+    <h2>Détails du jeu de données</h2>
     <table class="styled-table">
         <thead>
             <tr>
@@ -33,7 +33,10 @@
         </tbody>
     </table>
 
-    <h3>Related URL Table Mappings</h3>
+    <h3>Tableux de données</h3>
+    <div class="action-add">
+        <a href="{% url 'delete_all_mappings' datasets.0.id_urls.id %}" class="icon-link"><i class="fas fa-trash-alt"></i>Effacer tout</a>
+    </div>
     <table class="styled-table">
         <thead>
             <tr>

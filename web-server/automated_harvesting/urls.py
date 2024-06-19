@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views.model_views import list_models, view_model_data, modify_record, delete_record, add_record
 from .views.datasets_views import view_datasets, modify_dataset, delete_dataset, add_dataset, refresh_dataset, refresh_all_datasets
-from .views.url_table_mapping_view import watch_dataset, view_table_data, delete_url_table_mapping
+from .views.url_table_mapping_view import watch_dataset, view_table_data, delete_url_table_mapping, delete_all_url_table_mappings
 from .views.base_view import base
 
 
@@ -29,4 +29,5 @@ urlpatterns = [
 
     path('view_table_data/<str:table_name>/', view_table_data, name='view_table_data'),
     path('delete_url_table_mapping/<int:mapping_id>/', delete_url_table_mapping, name='delete_url_table_mapping'),
+    path('delete-all-mappings/<int:url_id>/', delete_all_url_table_mappings, name='delete_all_mappings'),
 ]

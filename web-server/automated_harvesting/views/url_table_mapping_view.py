@@ -1,9 +1,8 @@
 from django.shortcuts import render, redirect
 from django.apps import apps
 from ..models import UrlTableMapping, Urls 
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.db import connection, transaction
-
 
 def watch_dataset(request, url_id):
     model_name = "Datasets"
@@ -12,7 +11,6 @@ def watch_dataset(request, url_id):
     if not datasets:
         raise Http404("No datasets found for this URL")
 
-    # Fetch related UrlTableMapping entries
     url_table_mappings = UrlTableMapping.objects.filter(id_urls=url_id)
     
     context = {
@@ -27,7 +25,6 @@ def watch_dataset(request, url_id):
 def view_table_data(request, table_name):
     schema_name = 'data'
 
-    # Get the list of valid table names to avoid SQL injection
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema_name}'")
         valid_tables = [row[0] for row in cursor.fetchall()]
@@ -56,14 +53,32 @@ def delete_url_table_mapping(request, mapping_id):
         raise Http404("Mapping not found")
 
     schema_name = 'data'
-    table_name = mapping.table_name
+    table_id = mapping.id_table_names.id
+    table_name = mapping.get_table_name()
 
     with transaction.atomic():
-        # Delete the mapping entry
         mapping.delete()
 
-        # Drop the table
         with connection.cursor() as cursor:
-            cursor.execute(f'DROP TABLE IF EXISTS {schema_name}."{table_name}"')
+            cursor.execute('DROP TABLE IF EXISTS {schema}."{table}"'.format(schema=schema_name, table=table_name))
+            cursor.execute('DELETE FROM table_names WHERE id = %s', [table_id])
 
     return redirect('watch_dataset', mapping.id_urls.id)
+
+
+def delete_all_url_table_mappings(request, url_id):
+    schema_name = 'data'
+    with transaction.atomic():
+        mappings = UrlTableMapping.objects.filter(id_urls_id=url_id)
+        for mapping in mappings:
+            table_id = mapping.id_table_names.id
+            table_name = mapping.get_table_name()
+
+            mapping.delete()
+
+            with connection.cursor() as cursor:
+                cursor.execute('DROP TABLE IF EXISTS {schema}."{table}"'.format(schema=schema_name, table=table_name))
+                cursor.execute('DELETE FROM table_names WHERE id = %s', [table_id])
+
+    
+    return redirect('watch_dataset', url_id)

@@ -17,15 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 def download_file(url):
-    response = requests.get(url, allow_redirects=True)
+
+    with requests.Session() as session:
+            response = session.get(url, allow_redirects=True, timeout=3000)
+
     if response.status_code == 200:
         return response
     else:
         return None
-
-
-def is_folder(filename):
-    return os.path.isdir(filename)
 
 
 def handle_file(id, data, file_name):
@@ -67,11 +66,12 @@ def handle_file(id, data, file_name):
 
 def process_folder(id, folder_path):
     try:
+        logger.info(f"Handling file: {folder_path}")
         for root, dirs, files in os.walk(folder_path):
             for file_name in files:
                 file_path = os.path.join(root, file_name)
                 with open(file_path, 'rb') as file:
-                    handle_file(id, file.read(), os.path.relpath(file_path, folder_path))
+                    handle_file(id, file.read(), file_name)
             for sub_folder in dirs:
                 sub_folder_path = os.path.join(root, sub_folder)
                 process_folder(id, sub_folder_path)
@@ -92,27 +92,38 @@ def process_zip(id, data):
                         zip_ref.extract(file, tempfile.gettempdir())
                         process_folder(id, folder_path)
                     else:
-                        handle_file(id, f.read(), f.name)
+                        file_name = os.path.basename(f.name)
+                        handle_file(id, f.read(), file_name)
     except Exception as e:
         logger.error(f"Error processing ZIP file: {e}")
 
 
 def handle_data_gouv(id, url):
     try:
+        logger.info(f"Handling URL '{url}'")
         response = requests.get(url)
+        logger.info(f"Received response with status code {response.status_code} for URL '{url}'")
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             articles = soup.find_all("article")
+            logger.info(f"Found {len(articles)} articles in the page")
+
             for article in articles:
                 h4_element = article.find("h4")
                 link = article.find("a", class_="matomo_download")
+                logger.debug(f"Article details: h4_element={h4_element}, link={link}")
+                
                 if h4_element and link:
                     file_name = h4_element.text.strip()
-
                     file_url = link.get("href")
+                    logger.info(f"Downloading file '{file_name}' from '{file_url}'")
+                    
                     response = download_file(file_url)
                     if response is not None:
+                        logger.info(f"Downloaded file '{file_name}' successfully")
                         handle_file(id, response.content, file_name)
+                    else:
+                        logger.error(f"Failed to download file from '{file_url}'")
         else:
             logger.error(f"Failed to fetch data from '{url}'. Status code: {response.status_code}")
     except Exception as e:
@@ -121,6 +132,7 @@ def handle_data_gouv(id, url):
 
 def handle_url(id, url):
     try:
+        logger.info(f"Handling URL '{url}'")
         response = download_file(url)
 
         if response is None:

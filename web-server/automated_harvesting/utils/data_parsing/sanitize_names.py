@@ -49,7 +49,7 @@ def sanitize_field_names(field_names):
     return cleaned_names
 
 
-def truncate_table_name(table_name, max_length=63):
+def truncate_table_name(table_name, max_length=55):
     try:
         if len(table_name) <= max_length:
             return table_name
@@ -78,18 +78,20 @@ def truncate_table_name(table_name, max_length=63):
 
 def sanitize_table_name(file_name):
     try:
-        table_name = re.sub(r'\W+', '_', file_name)
-        table_name = re.sub(r'[èé]', 'e', table_name)
-        table_name = re.sub(r'à', 'a', table_name)
+        name, extension = re.match(r'^(.*?)(\.[^.]*?)?$', file_name).groups()
 
-        table_name = truncate_table_name(table_name)
+        name = re.sub(r'\W+', '_', name)
+        name = re.sub(r'[èé]', 'e', name)
+        name = re.sub(r'à', 'a', name)
 
-        if not table_name[0].isalpha() and table_name[0] != '_':
-            table_name = '_' + table_name
+        name = truncate_table_name(name)
 
-        logger.info(f"Final sanitized table name: '{table_name}'")
+        if not name[0].isalpha() and name[0] != '_':
+            name = '_' + name
 
-        return table_name
+        logger.info(f"Final sanitized table name: '{name}'")
+
+        return name
     except Exception as e:
         logger.error(f"Error sanitizing table name: {e}")
         raise e
