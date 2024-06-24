@@ -4,9 +4,8 @@ from django.http import Http404
 from django.forms import modelform_factory
 from ..forms import DatasetFilterForm
 from django.urls import reverse
-import threading
 
-from ..utils.url_handler import handle_data_gouv, handle_url
+from ..utils.datasets.download_dataset import download_dataset
 
 model_name = "Datasets"
 
@@ -81,7 +80,6 @@ def delete_dataset(request, record_id):
     return redirect('view_datasets')
     
 
-
 def add_dataset(request):
     model = apps.get_model('automated_harvesting', model_name)
     ModelForm = modelform_factory(model, fields='__all__')
@@ -99,22 +97,10 @@ def add_dataset(request):
 
 
 def refresh_dataset(request, record_id):
-    model = apps.get_model('automated_harvesting', model_name)
-    
     if request.method == 'POST':
         return redirect('view_datasets')
     
-    dataset = get_object_or_404(model, id=record_id)
-    
-    if dataset.id_urls and dataset.id_urls.url:
-        id = dataset.id_urls.id
-        url = dataset.id_urls.url
-        if "data.gouv.fr" in url:
-            thread = threading.Thread(target=handle_data_gouv, args=(id, url))
-            thread.start()
-        else:
-            thread = threading.Thread(target=handle_url, args=(id, url))
-            thread.start()
+    download_dataset(record_id)
     
     query_string = request.GET.urlencode()
     redirect_url = f"{reverse('view_datasets')}?{query_string}"
@@ -124,7 +110,7 @@ def refresh_dataset(request, record_id):
 
 
 def refresh_all_datasets(request):
-    model = apps.get_model('automated_harvesting', 'Datasets')
+    model = apps.get_model('automated_harvesting', model_name)
     filter_form = DatasetFilterForm(request.GET)
     objects = model.objects.all()
 
@@ -147,13 +133,7 @@ def refresh_all_datasets(request):
             objects = objects.filter(id_urls=filter_form.cleaned_data['id_urls'])
 
     for dataset in objects:
-        if dataset.id_urls and dataset.id_urls.url:
-            id = dataset.id_urls.id
-            url = dataset.id_urls.url
-            if "data.gouv.fr" in url:
-                handle_data_gouv(id, url)
-            else:
-                handle_url(id, url)
+        refresh_dataset(dataset.id)
  
     query_string = request.GET.urlencode()
     redirect_url = f"{reverse('view_datasets')}?{query_string}"

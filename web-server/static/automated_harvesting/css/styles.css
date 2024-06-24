@@ -217,3 +217,41 @@ body {
 }
 
 
+.column-toggle {
+    margin-top: 5px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.column-toggle.static {
+    background-color: #4CAF50; 
+    color: white;
+}
+
+.column-toggle.dynamic {
+    background-color: #4792f5; 
+    color: white;
+}
+
+.column-toggle.none {
+    background-color: #808080;
+    color: white;
+}
+
+#make-dynamic, #submit-columns {
+    padding: 10px 20px;
+    margin: 10px 0 ;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #009879; 
+    color: white;
+    font-weight: bold;
+}
+
+#make-dynamic:hover, #submit-columns:hover {
+    background-color: #005f6b;
+}

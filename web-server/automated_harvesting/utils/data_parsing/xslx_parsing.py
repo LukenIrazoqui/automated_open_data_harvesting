@@ -39,7 +39,9 @@ def process_xlsx(id, data, table_name):
             ws = wb[sheet_name]
 
 
-            if "param" in sheet_name.lower() or "def" in sheet_name.lower() :
+            keywords = ["param", "def", "déf", "conf"]
+
+            if any(keyword in sheet_name.lower() for keyword in keywords):
                 longest_row = find_longest_row(ws)
                 if longest_row is None:
                     logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")

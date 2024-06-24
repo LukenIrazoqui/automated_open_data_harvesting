@@ -25,8 +25,6 @@ CREATE DATABASE automated_open_data_harvesting
 -- ddl-end --
 
 
-\c automated_open_data_harvesting
-
 -- object: data | type: SCHEMA --
 -- DROP SCHEMA IF EXISTS data CASCADE;
 CREATE SCHEMA data;
@@ -301,7 +299,8 @@ CREATE TABLE public.url_table_mapping (
 	id bigint NOT NULL DEFAULT nextval('public.url_table_mapping_id_seq'::regclass),
 	id_urls bigint,
 	id_table_names bigint,
-	CONSTRAINT url_table_mapping_pk PRIMARY KEY (id)
+	CONSTRAINT url_table_mapping_pk PRIMARY KEY (id),
+	CONSTRAINT url_table_mapping_uq UNIQUE (id_table_names)
 );
 -- ddl-end --
 ALTER TABLE public.url_table_mapping OWNER TO postgres;
@@ -326,25 +325,13 @@ ALTER SEQUENCE public.table_names_id_seq OWNER TO postgres;
 -- DROP TABLE IF EXISTS public.table_names CASCADE;
 CREATE TABLE public.table_names (
 	id bigint NOT NULL DEFAULT nextval('public.table_names_id_seq'::regclass),
-	name text,
+	name text NOT NULL,
+	dynamic boolean NOT NULL DEFAULT false,
 	CONSTRAINT table_names_pk PRIMARY KEY (id)
 );
 -- ddl-end --
 ALTER TABLE public.table_names OWNER TO postgres;
 -- ddl-end --
-
--- object: table_names_fk | type: CONSTRAINT --
--- ALTER TABLE public.url_table_mapping DROP CONSTRAINT IF EXISTS table_names_fk CASCADE;
-ALTER TABLE public.url_table_mapping ADD CONSTRAINT table_names_fk FOREIGN KEY (id_table_names)
-REFERENCES public.table_names (id) MATCH FULL
-ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
-
--- object: url_table_mapping_uq | type: CONSTRAINT --
--- ALTER TABLE public.url_table_mapping DROP CONSTRAINT IF EXISTS url_table_mapping_uq CASCADE;
-ALTER TABLE public.url_table_mapping ADD CONSTRAINT url_table_mapping_uq UNIQUE (id_table_names);
--- ddl-end --
-
 
 -- object: public.dinamic_table_mapping_id_seq | type: SEQUENCE --
 -- DROP SEQUENCE IF EXISTS public.dinamic_table_mapping_id_seq CASCADE;
@@ -361,32 +348,6 @@ CREATE SEQUENCE public.dinamic_table_mapping_id_seq
 ALTER SEQUENCE public.dinamic_table_mapping_id_seq OWNER TO postgres;
 -- ddl-end --
 
--- object: public.dinamic_table_mapping | type: TABLE --
--- DROP TABLE IF EXISTS public.dinamic_table_mapping CASCADE;
-CREATE TABLE public.dinamic_table_mapping (
-	id bigint NOT NULL DEFAULT nextval('public.dinamic_table_mapping_id_seq'::regclass),
-	id_table_names bigint,
-	id_static_data_tables bigint,
-	id_dinamic_data_tables bigint,
-	CONSTRAINT dinamic_table_mapping_pk PRIMARY KEY (id)
-);
--- ddl-end --
-ALTER TABLE public.dinamic_table_mapping OWNER TO postgres;
--- ddl-end --
-
--- object: table_names_fk | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS table_names_fk CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT table_names_fk FOREIGN KEY (id_table_names)
-REFERENCES public.table_names (id) MATCH FULL
-ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
-
--- object: dinamic_table_mapping_uq | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS dinamic_table_mapping_uq CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT dinamic_table_mapping_uq UNIQUE (id_table_names);
--- ddl-end --
-
-
 -- object: public.dinamic_data_tables_id_seq | type: SEQUENCE --
 -- DROP SEQUENCE IF EXISTS public.dinamic_data_tables_id_seq CASCADE;
 CREATE SEQUENCE public.dinamic_data_tables_id_seq
@@ -402,15 +363,15 @@ CREATE SEQUENCE public.dinamic_data_tables_id_seq
 ALTER SEQUENCE public.dinamic_data_tables_id_seq OWNER TO postgres;
 -- ddl-end --
 
--- object: public.dinamic_data_tables | type: TABLE --
--- DROP TABLE IF EXISTS public.dinamic_data_tables CASCADE;
-CREATE TABLE public.dinamic_data_tables (
+-- object: public.dynamic_data_table_names | type: TABLE --
+-- DROP TABLE IF EXISTS public.dynamic_data_table_names CASCADE;
+CREATE TABLE public.dynamic_data_table_names (
 	id bigint NOT NULL DEFAULT nextval('public.dinamic_data_tables_id_seq'::regclass),
-	name text,
+	name text NOT NULL,
 	CONSTRAINT dinamic_data_tables_pk PRIMARY KEY (id)
 );
 -- ddl-end --
-ALTER TABLE public.dinamic_data_tables OWNER TO postgres;
+ALTER TABLE public.dynamic_data_table_names OWNER TO postgres;
 -- ddl-end --
 
 -- object: public.static_data_tables_id_seq | type: SEQUENCE --
@@ -428,39 +389,118 @@ CREATE SEQUENCE public.static_data_tables_id_seq
 ALTER SEQUENCE public.static_data_tables_id_seq OWNER TO postgres;
 -- ddl-end --
 
--- object: public.static_data_tables | type: TABLE --
--- DROP TABLE IF EXISTS public.static_data_tables CASCADE;
-CREATE TABLE public.static_data_tables (
+-- object: public.static_data_table_names | type: TABLE --
+-- DROP TABLE IF EXISTS public.static_data_table_names CASCADE;
+CREATE TABLE public.static_data_table_names (
 	id bigint NOT NULL DEFAULT nextval('public.static_data_tables_id_seq'::regclass),
-	name text,
+	name text NOT NULL,
 	CONSTRAINT static_data_tables_pk PRIMARY KEY (id)
 );
 -- ddl-end --
-ALTER TABLE public.static_data_tables OWNER TO postgres;
+ALTER TABLE public.static_data_table_names OWNER TO postgres;
 -- ddl-end --
 
--- object: static_data_tables_fk | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS static_data_tables_fk CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT static_data_tables_fk FOREIGN KEY (id_static_data_tables)
-REFERENCES public.static_data_tables (id) MATCH FULL
+-- object: public.view_names_id_seq | type: SEQUENCE --
+-- DROP SEQUENCE IF EXISTS public.view_names_id_seq CASCADE;
+CREATE SEQUENCE public.view_names_id_seq
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START WITH 1
+	CACHE 1
+	NO CYCLE
+	OWNED BY NONE;
+
+-- ddl-end --
+ALTER SEQUENCE public.view_names_id_seq OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.view_names | type: TABLE --
+-- DROP TABLE IF EXISTS public.view_names CASCADE;
+CREATE TABLE public.view_names (
+	id integer NOT NULL DEFAULT nextval('public.view_names_id_seq'::regclass),
+	name text NOT NULL,
+	CONSTRAINT view_names_pk PRIMARY KEY (id)
+);
+-- ddl-end --
+ALTER TABLE public.view_names OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.dinamic_table_mapping_id_seq1 | type: SEQUENCE --
+-- DROP SEQUENCE IF EXISTS public.dinamic_table_mapping_id_seq1 CASCADE;
+CREATE SEQUENCE public.dinamic_table_mapping_id_seq1
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START WITH 1
+	CACHE 1
+	NO CYCLE
+	OWNED BY NONE;
+
+-- ddl-end --
+ALTER SEQUENCE public.dinamic_table_mapping_id_seq1 OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.dynamic_table_mapping | type: TABLE --
+-- DROP TABLE IF EXISTS public.dynamic_table_mapping CASCADE;
+CREATE TABLE public.dynamic_table_mapping (
+	id serial NOT NULL,
+	id_table_names bigint,
+	id_static_data_table_names bigint,
+	id_dynamic_data_table_names bigint,
+	id_view_names integer,
+	CONSTRAINT dynamic_table_mapping_pk PRIMARY KEY (id)
+);
+-- ddl-end --
+ALTER TABLE public.dynamic_table_mapping OWNER TO postgres;
+-- ddl-end --
+
+-- object: table_names_fk | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS table_names_fk CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT table_names_fk FOREIGN KEY (id_table_names)
+REFERENCES public.table_names (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 
--- object: dinamic_table_mapping_uq1 | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS dinamic_table_mapping_uq1 CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT dinamic_table_mapping_uq1 UNIQUE (id_static_data_tables);
+-- object: dynamic_table_mapping_uq | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS dynamic_table_mapping_uq CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT dynamic_table_mapping_uq UNIQUE (id_table_names);
 -- ddl-end --
 
--- object: dinamic_data_tables_fk | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS dinamic_data_tables_fk CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT dinamic_data_tables_fk FOREIGN KEY (id_dinamic_data_tables)
-REFERENCES public.dinamic_data_tables (id) MATCH FULL
+-- object: static_data_table_names_fk | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS static_data_table_names_fk CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT static_data_table_names_fk FOREIGN KEY (id_static_data_table_names)
+REFERENCES public.static_data_table_names (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 
--- object: dinamic_table_mapping_uq2 | type: CONSTRAINT --
--- ALTER TABLE public.dinamic_table_mapping DROP CONSTRAINT IF EXISTS dinamic_table_mapping_uq2 CASCADE;
-ALTER TABLE public.dinamic_table_mapping ADD CONSTRAINT dinamic_table_mapping_uq2 UNIQUE (id_dinamic_data_tables);
+-- object: dynamic_table_mapping_uq1 | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS dynamic_table_mapping_uq1 CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT dynamic_table_mapping_uq1 UNIQUE (id_static_data_table_names);
+-- ddl-end --
+
+-- object: dynamic_data_table_names_fk | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS dynamic_data_table_names_fk CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT dynamic_data_table_names_fk FOREIGN KEY (id_dynamic_data_table_names)
+REFERENCES public.dynamic_data_table_names (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: dynamic_table_mapping_uq2 | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS dynamic_table_mapping_uq2 CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT dynamic_table_mapping_uq2 UNIQUE (id_dynamic_data_table_names);
+-- ddl-end --
+
+-- object: view_names_fk | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS view_names_fk CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT view_names_fk FOREIGN KEY (id_view_names)
+REFERENCES public.view_names (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: dynamic_table_mapping_uq3 | type: CONSTRAINT --
+-- ALTER TABLE public.dynamic_table_mapping DROP CONSTRAINT IF EXISTS dynamic_table_mapping_uq3 CASCADE;
+ALTER TABLE public.dynamic_table_mapping ADD CONSTRAINT dynamic_table_mapping_uq3 UNIQUE (id_view_names);
 -- ddl-end --
 
 -- object: sub_branches_fk | type: CONSTRAINT --
@@ -523,6 +563,13 @@ ON DELETE SET NULL ON UPDATE CASCADE;
 -- ALTER TABLE public.datasets DROP CONSTRAINT IF EXISTS region_fk CASCADE;
 ALTER TABLE public.datasets ADD CONSTRAINT region_fk FOREIGN KEY (id_region)
 REFERENCES public.region (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: table_names_fk | type: CONSTRAINT --
+-- ALTER TABLE public.url_table_mapping DROP CONSTRAINT IF EXISTS table_names_fk CASCADE;
+ALTER TABLE public.url_table_mapping ADD CONSTRAINT table_names_fk FOREIGN KEY (id_table_names)
+REFERENCES public.table_names (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 

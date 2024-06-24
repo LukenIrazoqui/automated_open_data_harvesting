@@ -35,12 +35,14 @@
 
     <h3>Tablaux de données</h3>
     <div class="action-add">
+        <a href="{% url 'refresh' datasets.0.id datasets.0.id_urls.id %}" class="icon-link"><i class="fa-solid fa-arrows-rotate"></i></a>
         <a href="{% url 'delete_all_mappings' datasets.0.id_urls.id %}" class="icon-link"><i class="fas fa-trash-alt"></i>Effacer tout</a>
     </div>
     <table class="styled-table">
         <thead>
             <tr>
                 <th>Table Name</th>
+                <th>Dynamic</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -48,6 +50,7 @@
             {% for mapping in url_table_mappings %}
                 <tr>
                     <td>{{ mapping.get_table_name }}</td>
+                    <td>{{ mapping.get_dynamic }}</td>
                     <td class="actions">
                         <div class="actions-container">
                             <a href="{% url 'view_table_data' mapping.get_table_name %}" class="icon-link"><i class="fas fa-eye"></i></a>

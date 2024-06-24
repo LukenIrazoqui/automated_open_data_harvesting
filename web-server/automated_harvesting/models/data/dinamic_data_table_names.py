@@ -1,14 +1,13 @@
 from django.db import models
 
 
-class TableNames(models.Model):
+class DinamicDataTableNames(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField()
-    dynamic = models.BooleanField(default=False)
 
     class Meta:
         managed = False
-        db_table = 'table_names'
+        db_table = 'dinamic_data_table_names'
         verbose_name = "Table names"
     
     def __str__(self):

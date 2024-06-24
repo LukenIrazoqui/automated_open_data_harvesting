@@ -28,7 +28,7 @@ def find_longest_row(sheet):
         if row_length > longest_row_length:
             longest_row_length = row_length
     if longest_row_length > 0:
-        return longest_row_length - 1 
+        return longest_row_length
     return None
 
 
@@ -53,7 +53,9 @@ def process_ods(id, data, table_name):
             sheet_name = ods_sheet.name
 
 
-            if "param" in sheet_name.lower() or "def" in sheet_name.lower() :
+            keywords = ["param", "def", "déf", "conf"]
+
+            if any(keyword in sheet_name.lower() for keyword in keywords):
                 longest_row = find_longest_row(ods_sheet)
                 if longest_row is None:
                     logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")

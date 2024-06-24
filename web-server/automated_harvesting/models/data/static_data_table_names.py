@@ -1,13 +1,13 @@
 from django.db import models
 
 
-class StaticDataTables(models.Model):
+class StaticDataTableNames(models.Model):
     id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=128)
+    name = models.TextField()
 
     class Meta:
         managed = False
-        db_table = 'static_data_tables'
+        db_table = 'static_data_table_names'
         verbose_name = "Table names"
     
     def __str__(self):

@@ -16,6 +16,7 @@ class UrlTableMapping(models.Model):
     
 
     def get_table_name(self):
-        print(self)
-        print(self.id_table_names.name)
         return self.id_table_names.name if self.id_table_names else None
+    
+    def get_dynamic(self):
+        return self.id_table_names.dynamic if self.id_table_names else None

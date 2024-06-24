@@ -1,12 +1,22 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block content %}
     <h2>Data from Table: {{ table_name }}</h2>
+    <button id="make-dynamic">Transformer en table dinamique</button>
+    <button id="submit-columns" style="display: none;">Valider</button>
     <table class="styled-table">
         <thead>
             <tr>
                 {% for column in columns %}
-                    <th>{{ column }}</th>
+                    <th>
+                        <span>{{ column }}</span>
+                        <div>
+                            <button class="column-toggle static" data-column="{{ column }}" style="display: none;">Static</button>
+                            <input type="radio" name="column-type-{{ column }}" class="column-selector static" data-column="{{ column }}" data-type="static" checked style="display: none;">
+                            <input type="radio" name="column-type-{{ column }}" class="column-selector dynamic" data-column="{{ column }}" data-type="dynamic" style="display: none;">
+                            <input type="radio" name="column-type-{{ column }}" class="column-selector none" data-column="{{ column }}" data-type="none" style="display: none;">
+                        </div>
+                    </th>
                 {% endfor %}
             </tr>
         </thead>
@@ -20,4 +30,81 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        document.getElementById('make-dynamic').addEventListener('click', function() {
+            var toggleButtons = document.querySelectorAll('.column-toggle');
+            toggleButtons.forEach(function(button) {
+                button.style.display = 'inline';
+            });
+            document.getElementById('submit-columns').style.display = 'inline';
+        });
+
+        document.querySelectorAll('.column-toggle').forEach(function(button) {
+            button.addEventListener('click', function() {
+                var column = this.getAttribute('data-column');
+                var staticRadio = document.querySelector('input[data-column="' + column + '"][data-type="static"]');
+                var dynamicRadio = document.querySelector('input[data-column="' + column + '"][data-type="dynamic"]');
+                var noneRadio = document.querySelector('input[data-column="' + column + '"][data-type="none"]');
+
+                if (staticRadio.checked) {
+                    staticRadio.checked = false;
+                    dynamicRadio.checked = true;
+                    noneRadio.checked = false;
+                    this.classList.remove('static');
+                    this.classList.add('dynamic');
+                    this.classList.remove('none');
+                    this.innerText = 'Dynamic';
+                } else if (dynamicRadio.checked) {
+                    staticRadio.checked = false;
+                    dynamicRadio.checked = false;
+                    noneRadio.checked = true;
+                    this.classList.remove('dynamic');
+                    this.classList.add('none');
+                    this.innerText = 'None';
+                } else {
+                    staticRadio.checked = true;
+                    dynamicRadio.checked = false;
+                    noneRadio.checked = false;
+                    this.classList.remove('none');
+                    this.classList.add('static');
+                    this.innerText = 'Static';
+                }
+            });
+        });
+
+        document.getElementById('submit-columns').addEventListener('click', function() {
+            var staticColumns = [];
+            var dynamicColumns = [];
+            var radios = document.querySelectorAll('.column-selector');
+            radios.forEach(function(radio) {
+                if (radio.checked) {
+                    if (radio.getAttribute('data-type') === 'static') {
+                        staticColumns.push(radio.getAttribute('data-column'));
+                    } else if (radio.getAttribute('data-type') === 'dynamic') {
+                        dynamicColumns.push(radio.getAttribute('data-column'));
+                    }
+                }
+            });
+
+            fetch("{% url 'submit_columns' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    table_name: '{{ table_name }}',
+                    static_columns: staticColumns,
+                    dynamic_columns: dynamicColumns
+                })
+            }).then(response => {
+                if (response.ok) {
+                    alert('Columns submitted successfully');
+                } else {
+                    alert('Error submitting columns');
+                }
+            });
+        });
+    </script>
 {% endblock %}

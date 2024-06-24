@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block content %}
+    <h1>Run SQL Query</h1>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="sql_query">SQL Query:</label><br>
+        <textarea name="sql_query" id="sql_query" rows="10" cols="50"></textarea><br><br>
+        <button type="submit">Run Query</button>
+    </form>
+
+    {% if result %}
+        <h2>Query Results</h2>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    {% for column in result.0 %}
+                        <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in result %}
+                    <tr>
+                        {% for value in row %}
+                            <td>{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
