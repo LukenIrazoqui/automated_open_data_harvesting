@@ -69,7 +69,7 @@ def modify_dataset(request, record_id):
     else:
         form = ModelForm(instance=obj)  
     
-    return render(request, 'datasets_views/actions/modify_record.html', {'form': form, 'model_name': model_name})
+    return render(request, 'actions/modify_record.html', {'form': form, 'model_name': model_name})
 
 
 def delete_dataset(request, record_id):
@@ -93,7 +93,7 @@ def add_dataset(request):
     else:
         form = ModelForm()  
     
-    return render(request, 'datasets_views/actions/add_record.html', {'form': form, 'model_name': model_name})
+    return render(request, 'actions/add_record.html', {'form': form, 'model_name': model_name})
 
 
 def refresh_dataset(request, record_id):
@@ -133,7 +133,7 @@ def refresh_all_datasets(request):
             objects = objects.filter(id_urls=filter_form.cleaned_data['id_urls'])
 
     for dataset in objects:
-        refresh_dataset(dataset.id)
+        download_dataset(dataset.id)
  
     query_string = request.GET.urlencode()
     redirect_url = f"{reverse('view_datasets')}?{query_string}"

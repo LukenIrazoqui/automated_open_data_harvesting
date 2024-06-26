@@ -2,7 +2,7 @@
 
 {% load static %}
 {% block content %}
-    <h1>Run SQL Query</h1>
+    <h1>Console SQL</h1>
 
     {% if error %}
         <p style="color: red;">{{ error }}</p>
@@ -16,11 +16,11 @@
     </form>
 
     {% if result %}
-        <h2>Query Results</h2>
+        <h2>Résultat</h2>
         <table class="styled-table">
             <thead>
                 <tr>
-                    {% for column in result.0 %}
+                    {% for column in columns %}
                         <th>{{ column }}</th>
                     {% endfor %}
                 </tr>

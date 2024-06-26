@@ -58,7 +58,7 @@ def modify_record(request, model_name, record_id):
     else:
         form = ModelForm(instance=obj)  
     
-    return render(request, 'model_views/actions/modify_record.html', {'form': form, 'model_name': model_name})
+    return render(request, 'actions/modify_record.html', {'form': form, 'model_name': model_name})
 
 
 def delete_record(request, model_name, record_id):
@@ -93,4 +93,4 @@ def add_record(request, model_name):
     else:
         form = CustomModelForm()  
     
-    return render(request, 'model_views/actions/add_record.html', {'form': form, 'model_name': model_name})
+    return render(request, 'actions/add_record.html', {'form': form, 'model_name': model_name})

@@ -49,7 +49,7 @@ def handle_file(id, data, file_name):
             process_ods(id, data, table_name)
         elif file_name.endswith('.shp'):
             table_name = sanitize_table_name(file_name)
-            logger.info(f"Processing Shapefile {file_name} into table {table_name}")
+            logger.info(f"Processing Shapefile {file_name} into table {table_name}")    
             process_shp(id, data, table_name)
         elif file_name.endswith('.dbf'):
             table_name = sanitize_table_name(file_name)

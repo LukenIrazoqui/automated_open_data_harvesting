@@ -9,3 +9,5 @@ from .data.sources import Sources
 from .data.sub_branches import SubBranches
 from .data.url_table_mapping import UrlTableMapping
 from .data.urls import Urls
+from .data.dynamic_table_mapping import DynamicTableMapping
+from .data.dynamic_data_table_names import DynamicDataTableNames

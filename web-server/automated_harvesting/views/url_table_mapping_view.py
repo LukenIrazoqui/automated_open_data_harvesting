@@ -37,6 +37,7 @@ def delete_url_table_mapping(request, mapping_id):
         mapping.delete()
 
         with connection.cursor() as cursor:
+            cursor.execute('DELETE FROM dynamic_table_mapping WHERE id_table_names = %s', [table_id])
             cursor.execute('DROP TABLE IF EXISTS {schema}."{table}"'.format(schema=schema_name, table=table_name))
             cursor.execute('DELETE FROM table_names WHERE id = %s', [table_id])
 
@@ -54,6 +55,7 @@ def delete_all_url_table_mappings(request, url_id):
             mapping.delete()
 
             with connection.cursor() as cursor:
+                cursor.execute('DELETE FROM dynamic_table_mapping WHERE id_table_names = %s', [table_id])
                 cursor.execute('DROP TABLE IF EXISTS {schema}."{table}"'.format(schema=schema_name, table=table_name))
                 cursor.execute('DELETE FROM table_names WHERE id = %s', [table_id])
 
