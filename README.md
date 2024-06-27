@@ -1,10 +1,20 @@
 # automated_open_data_harvesting
 Python project for the automated harvesting and visualisation of open data
 
+Running Docker Compose:
+	To start containers defined in docker-compose.yml:
+		docker-compose up
 
-https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-debian-11
+	To start containers in detached mode:
+		docker-compose up -d
 
+	To build and start containers:
+		docker-compose up --build
 
-sudo psql -U postgres -f create_database.sql
+Stopping Docker Compose:
+	To stop containers started with docker-compose up:
+		docker-compose down
 
-psql -U postgres -d automated_open_data_harvesting -f populate.sql  
+Viewing Logs:	
+	To view logs of containers started with Docker Compose:
+		docker-compose logs [SERVICE_NAME]
