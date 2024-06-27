@@ -91,7 +91,9 @@ def sanitize_table_name(file_name):
 
         logger.info(f"Final sanitized table name: '{name}'")
 
-        return name
+        if extension != None:
+            name += extension
+        return name 
     except Exception as e:
         logger.error(f"Error sanitizing table name: {e}")
         raise e

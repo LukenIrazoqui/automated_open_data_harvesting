@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger('automated_harvesting.utils.data_parsing.ods_parsing')
 
-
 def find_longest_row(sheet):
     longest_row_length = 0
     for row_index, row in enumerate(sheet.rows()):
@@ -56,7 +55,46 @@ def split_and_insert_dynamic_data(sheet_table_name, field_names, values, static_
     insert_row(dynamic_insert_data)
 
 
-def process_rows(ods_sheet, header_row_index, valid_columns, field_names, sheet_table_name, is_dynamic, static_column_names, dynamic_column_names):
+def setup_ods_table(sheet_table_name, field_names, id):
+    table_data = {
+        "schema": "data",
+        "name": sheet_table_name,
+        "field_names": field_names,
+        "id": id
+    }
+
+    try:
+        create_table(table_data)
+    except Exception as create_table_error:
+        logger.error(f"Error occurred during table creation {sheet_table_name}: {create_table_error}")
+        raise create_table_error
+
+
+def check_dynamic_columns_for_ods(sheet_table_name):
+    is_dynamic = is_table_dynamic(sheet_table_name)
+    if is_dynamic:
+        static_column_names, dynamic_column_names = dynamic_mapping_columns(sheet_table_name, "data")
+        if static_column_names is None or dynamic_column_names is None:
+            is_dynamic = False
+    else:
+        static_column_names, dynamic_column_names = None, None
+    return is_dynamic, static_column_names, dynamic_column_names
+
+
+def insert_data_from_row_ods(sheet_table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names):
+    if is_dynamic:
+        split_and_insert_dynamic_data(sheet_table_name, field_names, values, static_column_names, dynamic_column_names)
+    else:
+        insert_data = {
+            "schema": "data",
+            "name": sheet_table_name,
+            "field_names": field_names,
+            "data": values
+        }
+        insert_row(insert_data)
+
+
+def process_ods_rows(ods_sheet, header_row_index, valid_columns, field_names, sheet_table_name, is_dynamic, static_column_names, dynamic_column_names):
     for row_idx, row in enumerate(ods_sheet.rows()):
         if row_idx <= header_row_index:
             continue
@@ -69,85 +107,51 @@ def process_rows(ods_sheet, header_row_index, valid_columns, field_names, sheet_
         if len(values) != len(field_names):
             raise ValueError("Number of values in row doesn't match number of fields")
 
-        if is_dynamic:
-            split_and_insert_dynamic_data(sheet_table_name, field_names, values, static_column_names, dynamic_column_names)
-        else:
-            insert_data = {
-                "schema": "data",
-                "name": sheet_table_name,
-                "field_names": field_names,
-                "data": values
-            }
-            insert_row(insert_data)
+        insert_data_from_row_ods(sheet_table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names)
 
 
-def check_dynamic_and_get_columns(table_data):
-    is_dynamic = is_table_dynamic(table_data)
-    if is_dynamic:
-        static_column_names, dynamic_column_names = dynamic_mapping_columns(table_data, "data")
-        if not static_column_names or not dynamic_column_names:
-            is_dynamic = False
-    else:
-        static_column_names, dynamic_column_names = None, None
-    return is_dynamic, static_column_names, dynamic_column_names
-
-
-def handle_special_keywords(ods_sheet, sheet_name):
-    longest_row = find_longest_row(ods_sheet)
-    if longest_row is None:
-        logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")
-        return
-
-    header_row_index = 0
-    field_names = [f"column_{i}" for i in range(longest_row)]
-    return field_names, header_row_index
-
-
-def handle_standard_keywords(ods_sheet, sheet_name):
-    header_row_index = detect_header_row(ods_sheet)
-    if header_row_index is None:
-        logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")
-        return
-
-    header_row = ods_sheet.row(header_row_index)
-    field_names = sanitize_field_names(header_row)
-    field_names = [name for name in field_names if name is not None]
-    return field_names, header_row
-
-
-def process_ods_sheet(ods_sheet, id, table_name):
-    sheet_name = ods_sheet.name
-
+def handle_ods_keywords(ods_sheet, sheet_name):
     keywords = ["param", "def", "déf", "conf"]
 
     if any(keyword in sheet_name.lower() for keyword in keywords):
-        field_names, header_row_index = handle_special_keywords(ods_sheet, sheet_name)
+        longest_row = find_longest_row(ods_sheet)
+        if longest_row is None:
+            logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")
+            return None, None
+
+        header_row_index = 0
+        field_names = [f"column_{i}" for i in range(longest_row)]
     else:
-        field_names, header_row_index = handle_standard_keywords(ods_sheet, sheet_name)
+        header_row_index = detect_header_row(ods_sheet)
+        if header_row_index is None:
+            logger.warning(f"No header row detected in sheet '{sheet_name}'. Skipping this sheet.")
+            return None, None
+
+        header_row = ods_sheet.row(header_row_index)
+        field_names = [name for name in sanitize_field_names(header_row) if name != 'None']
+
+    return field_names, header_row_index
+
+
+def process_ods_sheet(ods_sheet, sheet_name, table_name, id):
+    field_names, header_row_index = handle_ods_keywords(ods_sheet, sheet_name)
+    if field_names is None or header_row_index is None:
+        return
 
     valid_columns = range(len(field_names))
     sheet_table_name = f"{table_name}_{sanitize_table_name(sheet_name)}"
 
-    table_data = {
-        "schema": "data",
-        "name": sheet_table_name,
-        "field_names": field_names,
-        "id": id
-    }
-
     try:
-        create_table(table_data)
-    except Exception as create_table_error:
-        logger.error(f"Error occurred during table creation {sheet_table_name}: {create_table_error}")
+        setup_ods_table(sheet_table_name, field_names, id)
+    except Exception:
         return
 
-    is_dynamic, static_column_names, dynamic_column_names = check_dynamic_and_get_columns(table_data)
-    
-    
+    is_dynamic, static_column_names, dynamic_column_names = check_dynamic_columns_for_ods(sheet_table_name)
+
     try:
-        process_rows(ods_sheet, header_row_index, valid_columns, field_names, table_name, is_dynamic, static_column_names, dynamic_column_names)
+        process_ods_rows(ods_sheet, header_row_index, valid_columns, field_names, sheet_table_name, is_dynamic, static_column_names, dynamic_column_names)
     except Exception as create_table_error:
-        logger.error(f"Error uploading the data: {create_table_error}")
+        logger.error(f"An error occurred while uploading the data for sheet {sheet_name}: {create_table_error}")
 
 
 def process_ods(id, data, table_name):
@@ -156,8 +160,8 @@ def process_ods(id, data, table_name):
         doc = ezodf.opendoc(ods_file)
 
         for ods_sheet in doc.sheets:
-            process_ods_sheet(ods_sheet, id, table_name)
-
+            sheet_name = ods_sheet.name
+            process_ods_sheet(ods_sheet, sheet_name, table_name, id)
     except Exception as ods_process_error:
         logger.error(f"An error occurred while processing ODS: {ods_process_error}")
         raise ods_process_error

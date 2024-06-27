@@ -1,16 +1,20 @@
+import logging
 from psycopg2 import sql
 from django.db import connection
 from ..models import TableNames, DynamicTableMapping
 
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger('automated_harvesting.utils.db_operations')
 
 def insert_row(insert_data):
     placeholders = ", ".join(["%s"] * len(insert_data['data']))
 
     insert_query = sql.SQL("""
-            INSERT INTO {schame_name}.{table_name} ({fields})
+            INSERT INTO {schema_name}.{table_name} ({fields})
             VALUES ({placeholders});
         """).format(
-        schame_name=sql.Identifier(insert_data['schema']),
+        schema_name=sql.Identifier(insert_data['schema']),
         table_name=sql.Identifier(insert_data['name']),
         fields=sql.SQL(', ').join(sql.Identifier(field) for field in insert_data['field_names']),
         placeholders=sql.SQL(placeholders)
@@ -34,9 +38,9 @@ def table_exists(table_data):
         exists = cursor.fetchone()[0]
 
     if exists:
-        print(f"Table {table_data['name']} exists")
+        logger.info(f"Table {table_data['name']} exists")
     else:
-        print(f"Table {table_data['name']} does not exist")
+        logger.info(f"Table {table_data['name']} does not exist")
 
     return exists
 
@@ -51,55 +55,68 @@ def link_url_table(id, table_id):
         }
         insert_row(insert_data)
     except Exception as e:
-        print(f"Error linking URL ID {id} to table {table_id}: {e}")
+        logger.info(f"Error linking URL ID {id} to table {table_id}: {e}")
         raise
 
 
 def create_table(table_data):
     if not table_exists(table_data):
-        print(f"Creating table {table_data['name']}")
+        logger.info(f"Creating table {table_data['name']}")
 
-        create_table_query = sql.SQL("""
-                                CREATE TABLE IF NOT EXISTS {schema}.{table} (
-                                    id SERIAL PRIMARY KEY,
-                                    {fields}
-                                )
-                            """).format(
-            schema=sql.Identifier(table_data['schema']),
-            table=sql.Identifier(table_data['name']),
-            fields=sql.SQL(', ').join(sql.SQL("{} TEXT").format(sql.Identifier(field)) for field in table_data['field_names'])
-        )
+        schema_name = table_data['schema']
+        table_name = table_data['name']
+        field_names = table_data['field_names']
+        id = table_data['id']
 
-        with connection.cursor() as cursor:
-            cursor.execute(create_table_query)
+        if not field_names:
+            raise ValueError("Field names list is empty, cannot create table.")
 
-        connection.commit()
+        try:
+            create_table_query = sql.SQL("""
+                CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (
+                    id SERIAL PRIMARY KEY,
+                    {field_definitions}
+                );
+            """).format(
+                schema_name=sql.Identifier(schema_name),
+                table_name=sql.Identifier(table_name),
+                field_definitions=sql.SQL(', ').join(sql.SQL("{} TEXT").format(sql.Identifier(field)) for field in field_names)
+            )
 
+            with connection.cursor() as cursor:
+                cursor.execute(create_table_query)
+            connection.commit()
 
+            logger.info(f"Table {schema_name}.{table_name} created successfully with fields: {field_names}")
+
+        except Exception as e:
+            logger.error(f"Error creating table with table_data: {table_data}, error: {e}")
+            raise
+
+        logger.info(f"Adding {table_data['name']} to table_names")
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO table_names (name) 
                 VALUES (%s) 
                 RETURNING id
-            """, (table_data['name'],))
+            """, (table_name,))
+            
             table_id = cursor.fetchone()[0]
 
         connection.commit()
         
-        print(f"Table {table_data['name']} created successfully")
+        logger.info(f"Linking {table_data['name']} to url : {table_data['id']}")
 
         link_url_table(table_data['id'], table_id)
 
-
     else :
-        delete_from = sql.SQL("DELETE FROM {schema}.{table}").format(
+        delete_query = sql.SQL("DELETE FROM {schema}.{table}").format(
             schema=sql.Identifier(table_data['schema']),
             table=sql.Identifier(table_data['name'])
         )
 
-
         with connection.cursor() as cursor:
-            cursor.execute(create_table_query)
+            cursor.execute(delete_query)
 
         connection.commit()
 

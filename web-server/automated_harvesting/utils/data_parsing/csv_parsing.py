@@ -1,13 +1,9 @@
 import csv
-import os
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 import pandas as pd
-from ..db_operations import insert_row, create_table, link_url_table
-from .sanitize_names import sanitize_field_names, sanitize_table_name
-import time
-import psutil
+from ..db_operations import insert_row, create_table, is_table_dynamic, dynamic_mapping_columns
+from .sanitize_names import sanitize_field_names
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +41,78 @@ def detect_header_row(csv_file, delimiter):
         raise e
 
 
+def split_and_insert_dynamic_data(sheet_table_name, field_names, values, static_column_names, dynamic_column_names):
+    static_data = {field: value for field, value in zip(field_names, values) if field in static_column_names}
+    dynamic_data = {field: value for field, value in zip(field_names, values) if field in dynamic_column_names}
+
+    static_insert_data = {
+        "schema": "data",
+        "name": sheet_table_name,
+        "field_names": list(static_data.keys()),
+        "data": list(static_data.values())
+    }
+    insert_row(static_insert_data)
+
+    dynamic_insert_data = {
+        "schema": "data",
+        "name": sheet_table_name,
+        "field_names": list(dynamic_data.keys()),
+        "data": list(dynamic_data.values())
+    }
+    insert_row(dynamic_insert_data)
+
+
+def insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names):
+    if is_dynamic:
+        split_and_insert_dynamic_data(table_name, field_names, values, static_column_names, dynamic_column_names)
+    else:
+        insert_data = {
+            "schema": "data",
+            "name": table_name,
+            "field_names": field_names,
+            "data": values
+        }
+        insert_row(insert_data)
+
+
+def process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names):
+    for row in csv_data:
+        if all(pd.isnull(value) for value in row.values()):
+            continue
+
+        values = [str(value) if pd.notnull(value) else '' for value in row.values()]
+        if len(values) != len(field_names):
+            raise ValueError("Number of values in row doesn't match number of fields")
+
+        insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names)
+
+
+def setup_csv_table(table_name, field_names, id):
+    table_data = {
+        "schema": "data",
+        "name": table_name,
+        "field_names": field_names,
+        "id": id
+    }
+
+    try:
+        create_table(table_data)
+    except Exception as create_table_error:
+        logger.error(f"Error creating table {table_name}: {create_table_error}")
+        raise create_table_error
+
+
+def check_dynamic_columns_for_csv(table_name):
+    is_dynamic = is_table_dynamic(table_name)
+    if is_dynamic:
+        static_column_names, dynamic_column_names = dynamic_mapping_columns(table_name, "data")
+        if static_column_names is None or dynamic_column_names is None:
+            is_dynamic = False
+    else:
+        static_column_names, dynamic_column_names = None, None
+    return is_dynamic, static_column_names, dynamic_column_names
+
+
 def process_csv(id, data, table_name):
     try:
         content = data.decode('utf-8')
@@ -65,45 +133,11 @@ def process_csv(id, data, table_name):
         csv_data = csv.DictReader(csv_file, delimiter=delimiter)
         field_names = sanitize_field_names(csv_data.fieldnames)
 
+        setup_csv_table(table_name, field_names, id)
 
-        print(f"Field_names: {field_names}")
-        print(f"Number of fields: {len(field_names)}")
+        is_dynamic, static_column_names, dynamic_column_names = check_dynamic_columns_for_csv(table_name)
 
-        table_data = {
-            "schema": "data",
-            "name": table_name,
-            "field_names": field_names,
-            "id" : id
-        }
-
-        try:
-            create_table(table_data)
-        except Exception as e:
-            logger.error(f"Error creating table {table_name}: {e}")
-            raise
-
-
-        with ThreadPoolExecutor(max_workers=os.cpu_count() // 2) as executor:
-            for row in csv_data:
-                while psutil.virtual_memory().percent >= 80:
-                    print("Memory usage is too high, waiting...")
-                    time.sleep(1)
-                            
-                if all(pd.isnull(value) for value in row.values()):
-                    continue
-
-                values = [str(value) if pd.notnull(value) else '' for value in row.values()]
-                if len(values) != len(field_names):
-                    raise ValueError("Number of values in row doesn't match number of fields")
-
-                insert_data = {
-                    "schema": "data",
-                    "name": table_name,
-                    "field_names": field_names,
-                    "data": values
-                }
-                executor.submit(insert_row, insert_data)
-
+        process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names)
 
     except Exception as e:
         logger.error(f"Error processing CSV: {e}")

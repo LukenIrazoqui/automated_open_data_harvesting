@@ -1,12 +1,8 @@
-import os
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import shapefile
 from io import BytesIO
 from ..db_operations import insert_row, create_table, is_table_dynamic, dynamic_mapping_columns
 from .sanitize_names import sanitize_field_names
-import time
-import psutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

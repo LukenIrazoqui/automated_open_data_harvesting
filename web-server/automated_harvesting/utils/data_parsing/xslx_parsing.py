@@ -1,6 +1,4 @@
-import os
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 import openpyxl
 from ..db_operations import insert_row, create_table, is_table_dynamic, dynamic_mapping_columns
@@ -106,7 +104,7 @@ def handle_standard_keywords(ws):
 
 def process_sheet(wb, sheet_name, id, table_name):
     ws = wb[sheet_name]
-    keywords = ["param", "def", "déf", "conf"]
+    keywords = ["param", "def", "déf", "conf", "doc"]
 
     if any(keyword in sheet_name.lower() for keyword in keywords):
         field_names, header_row_index = handle_special_keywords(ws)
