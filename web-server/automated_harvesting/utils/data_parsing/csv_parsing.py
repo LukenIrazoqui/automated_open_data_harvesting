@@ -2,7 +2,7 @@ import csv
 import logging
 from io import StringIO
 import pandas as pd
-from ..db_operations import insert_row, create_table, is_table_dynamic, dynamic_mapping_columns
+from ..db_operations import insert_row, create_table, check_dynamic_and_get_columns, split_and_insert_dynamic_data
 from .sanitize_names import sanitize_field_names
 
 # Configure logging
@@ -41,30 +41,9 @@ def detect_header_row(csv_file, delimiter):
         raise e
 
 
-def split_and_insert_dynamic_data(sheet_table_name, field_names, values, static_column_names, dynamic_column_names):
-    static_data = {field: value for field, value in zip(field_names, values) if field in static_column_names}
-    dynamic_data = {field: value for field, value in zip(field_names, values) if field in dynamic_column_names}
-
-    static_insert_data = {
-        "schema": "data",
-        "name": sheet_table_name,
-        "field_names": list(static_data.keys()),
-        "data": list(static_data.values())
-    }
-    insert_row(static_insert_data)
-
-    dynamic_insert_data = {
-        "schema": "data",
-        "name": sheet_table_name,
-        "field_names": list(dynamic_data.keys()),
-        "data": list(dynamic_data.values())
-    }
-    insert_row(dynamic_insert_data)
-
-
-def insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names):
+def insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name):
     if is_dynamic:
-        split_and_insert_dynamic_data(table_name, field_names, values, static_column_names, dynamic_column_names)
+        split_and_insert_dynamic_data(field_names, values, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name)
     else:
         insert_data = {
             "schema": "data",
@@ -75,7 +54,7 @@ def insert_data_from_row(table_name, field_names, values, is_dynamic, static_col
         insert_row(insert_data)
 
 
-def process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names):
+def process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name):
     for row in csv_data:
         if all(pd.isnull(value) for value in row.values()):
             continue
@@ -84,7 +63,7 @@ def process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_colum
         if len(values) != len(field_names):
             raise ValueError("Number of values in row doesn't match number of fields")
 
-        insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names)
+        insert_data_from_row(table_name, field_names, values, is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name)
 
 
 def setup_csv_table(table_name, field_names, id):
@@ -100,17 +79,6 @@ def setup_csv_table(table_name, field_names, id):
     except Exception as create_table_error:
         logger.error(f"Error creating table {table_name}: {create_table_error}")
         raise create_table_error
-
-
-def check_dynamic_columns_for_csv(table_name):
-    is_dynamic = is_table_dynamic(table_name)
-    if is_dynamic:
-        static_column_names, dynamic_column_names = dynamic_mapping_columns(table_name, "data")
-        if static_column_names is None or dynamic_column_names is None:
-            is_dynamic = False
-    else:
-        static_column_names, dynamic_column_names = None, None
-    return is_dynamic, static_column_names, dynamic_column_names
 
 
 def process_csv(id, data, table_name):
@@ -135,9 +103,9 @@ def process_csv(id, data, table_name):
 
         setup_csv_table(table_name, field_names, id)
 
-        is_dynamic, static_column_names, dynamic_column_names = check_dynamic_columns_for_csv(table_name)
+        is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name = check_dynamic_and_get_columns(table_name)
 
-        process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names)
+        process_csv_rows(csv_data, table_name, field_names, is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name)
 
     except Exception as e:
         logger.error(f"Error processing CSV: {e}")

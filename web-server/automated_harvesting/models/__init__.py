@@ -11,3 +11,5 @@ from .data.url_table_mapping import UrlTableMapping
 from .data.urls import Urls
 from .data.dynamic_table_mapping import DynamicTableMapping
 from .data.dynamic_data_table_names import DynamicDataTableNames
+from .data.static_data_table_names import StaticDataTableNames
+from .data.view_names import ViewNames

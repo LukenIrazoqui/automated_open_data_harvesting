@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build:  
+      context: .
+    command: bash -c "python manage.py migrate && gunicorn automated_open_data_harvesting.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/code
+      - ./static:/code/static
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env.dev  
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./database/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
+      - ./database/populate.sql:/docker-entrypoint-initdb.d/populate.sql
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=automated_open_data_harvesting
+
+volumes:
+  postgres_data:

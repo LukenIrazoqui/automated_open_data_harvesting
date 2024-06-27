@@ -16,12 +16,14 @@
 -- 
 -- object: automated_open_data_harvesting | type: DATABASE --
 -- DROP DATABASE IF EXISTS automated_open_data_harvesting;
-CREATE DATABASE automated_open_data_harvesting
-	ENCODING = 'UTF8'
-	LC_COLLATE = 'en_IE.UTF-8'
-	LC_CTYPE = 'en_IE.UTF-8'
-	TABLESPACE = pg_default
-	OWNER = postgres;
+DO $$BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'automated_open_data_harvesting') THEN
+        CREATE DATABASE automated_open_data_harvesting	
+            TABLESPACE = pg_default
+            OWNER = postgres;
+    END IF;
+END$$;
+
 -- ddl-end --
 
 

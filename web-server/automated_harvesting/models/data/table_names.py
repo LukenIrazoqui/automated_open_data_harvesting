@@ -4,7 +4,7 @@ from django.db import models
 class TableNames(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField()
-    dynamic = models.BooleanField(default=False)
+    dynamic = models.BooleanField()
 
     class Meta:
         managed = False

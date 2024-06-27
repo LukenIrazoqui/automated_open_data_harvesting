@@ -7,22 +7,88 @@ logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger('automated_harvesting.utils.db_operations')
 
+
+def get_id(insert_data):
+    select_query = sql.SQL("""
+        SELECT id FROM {schema_name}.{table_name}
+        WHERE {conditions}
+        ORDER BY id DESC
+        LIMIT 1;
+    """).format(
+        schema_name=sql.Identifier(insert_data['schema']),
+        table_name=sql.Identifier(insert_data['name']),
+        conditions=sql.SQL(' AND ').join(
+            sql.SQL("{field} = %s").format(field=sql.Identifier(field))
+            for field in insert_data['field_names']
+        )
+    )
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(select_query, insert_data['data'])
+            row = cursor.fetchone()
+            if row:
+                return row[0]
+            else:
+                raise ValueError("No row found after insertion")
+    except Exception as e:
+        logger.error(f"Error fetching id after insertion: {e}")
+        raise
+
+
+def row_exists(schema_name, table_name, unique_field_names, field_values):
+    conditions = []
+    for field_name in unique_field_names:
+        conditions.append(sql.SQL("{field} = %s").format(field=sql.Identifier(field_name)))
+
+    query = sql.SQL("""
+        SELECT EXISTS (
+            SELECT 1 FROM {schema_name}.{table_name}
+            WHERE {conditions}
+        )
+    """).format(
+        schema_name=sql.Identifier(schema_name),
+        table_name=sql.Identifier(table_name),
+        conditions=sql.SQL(" AND ").join(conditions)
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute(query, field_values)
+        return cursor.fetchone()[0]
+    
+
 def insert_row(insert_data):
-    placeholders = ", ".join(["%s"] * len(insert_data['data']))
+    unique_field_names = insert_data['field_names']
+    field_values = insert_data['data']
+
+    if row_exists(insert_data['schema'], insert_data['name'], unique_field_names, field_values):
+        print(f"Row with values {field_values} already exists. Skipping insertion.")
+        return
+
+    placeholders = ", ".join(["%s"] * len(field_values))
 
     insert_query = sql.SQL("""
-            INSERT INTO {schema_name}.{table_name} ({fields})
-            VALUES ({placeholders});
-        """).format(
+        INSERT INTO {schema_name}.{table_name} ({fields})
+        VALUES ({placeholders})
+        RETURNING id;
+    """).format(
         schema_name=sql.Identifier(insert_data['schema']),
         table_name=sql.Identifier(insert_data['name']),
         fields=sql.SQL(', ').join(sql.Identifier(field) for field in insert_data['field_names']),
         placeholders=sql.SQL(placeholders)
     )
 
-    with connection.cursor() as cursor:
-        cursor.execute(insert_query, insert_data['data'])
-    connection.commit()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(insert_query, field_values)
+            inserted_id = cursor.fetchone()[0]
+        connection.commit()
+        print(f"Inserted row with values {field_values} successfully.")
+        return inserted_id
+    except Exception as e:
+        logger.error(f"Error inserting row: {e}")
+        connection.rollback()
+        raise
 
 
 def table_exists(table_data):
@@ -172,14 +238,45 @@ def get_column_names(table_name, schema_name):
     return [column[0] for column in columns]
 
 
-def dynamic_mapping_columns(table_name, schema_name):
-    dynamic_mappings = get_dynamic_table_mappings(table_name)
-    static_column_names = []
-    dynamic_column_names = []
+def check_dynamic_and_get_columns(sheet_table_name):
+    is_dynamic = is_table_dynamic(sheet_table_name)
+    if is_dynamic:
+        dynamic_mappings = get_dynamic_table_mappings(sheet_table_name)
+        static_table_name = dynamic_mappings['static_data_tables']
+        dynamic_table_name = dynamic_mappings['dynamic_data_tables']
+        static_column_names = []
+        dynamic_column_names = []
 
-    if dynamic_mappings:
-        static_column_names = dynamic_mappings(dynamic_mappings['static_data_tables'], schema_name)
-        dynamic_column_names = dynamic_mappings(dynamic_mappings['dynamic_data_tables'], schema_name)
-        return static_column_names, dynamic_column_names
-    
-    return None
+        if dynamic_mappings:
+            static_column_names = get_column_names(dynamic_mappings['static_data_tables'], "data")
+            dynamic_column_names = get_column_names(dynamic_mappings['dynamic_data_tables'], "data")
+
+        if not static_column_names or not dynamic_column_names:
+            is_dynamic = False
+    else:
+        static_column_names, dynamic_column_names, static_table_name, dynamic_table_name = None, None, None, None
+    return is_dynamic, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name
+
+
+def split_and_insert_dynamic_data(field_names, values, static_column_names, dynamic_column_names, static_table_name, dynamic_table_name):
+    static_data = {field: value for field, value in zip(field_names, values) if field in static_column_names}
+    dynamic_data = {field: value for field, value in zip(field_names, values) if field in dynamic_column_names}
+
+    static_insert_data = {
+        "schema": "data",
+        "name": static_table_name,
+        "field_names": list(static_data.keys()),
+        "data": list(static_data.values())
+    }
+    id = insert_row(static_insert_data)
+
+    if id == None :
+        id = get_id(static_insert_data)
+
+    dynamic_insert_data = {
+        "schema": "data",
+        "name": dynamic_table_name,
+        "field_names": list(dynamic_data.keys()) + ['static_id'],
+        "data": list(dynamic_data.values()) + [id]
+    }
+    insert_row(dynamic_insert_data)
