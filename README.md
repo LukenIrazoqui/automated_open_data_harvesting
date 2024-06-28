@@ -1,20 +1,49 @@
-# automated_open_data_harvesting
-Python project for the automated harvesting and visualisation of open data
+# Automated Open Data Harvesting
 
-Running Docker Compose:
-	To start containers defined in docker-compose.yml:
-		docker-compose up
+This project automates the harvesting and visualization of open data using Docker Compose.
 
-	To start containers in detached mode:
-		docker-compose up -d
+## Getting Started
 
-	To build and start containers:
-		docker-compose up --build
+### Prerequisites
 
-Stopping Docker Compose:
-	To stop containers started with docker-compose up:
-		docker-compose down
+Ensure you have the following installed:
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-Viewing Logs:	
-	To view logs of containers started with Docker Compose:
-		docker-compose logs [SERVICE_NAME]
+### Running the Application
+
+To start the containers defined in `docker-compose.yml`:
+```sh
+    docker-compose up
+```
+
+To start the containers in detached mode:
+
+```sh
+    docker-compose up -d
+```
+
+To build and start the containers:
+
+```sh
+    docker-compose up --build
+```
+
+### Stopping the Application
+
+To stop the containers started with `docker-compose up`:
+
+```sh
+    docker-compose down
+```
+
+### Viewing Logs
+
+To view the logs of the containers:
+
+```sh
+    docker-compose logs [SERVICE_NAME]
+```
+
+Replace `[SERVICE_NAME]` with the name of the specific service you want to check the logs for.
+
