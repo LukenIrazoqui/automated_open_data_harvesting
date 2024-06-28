@@ -81,6 +81,10 @@ Replace `[SERVICE_NAME]` with the name of the specific service you want to check
             └── automated_harvesting
 ```
 
+- `database/`: This directory contains the sql scripts for the creation and initialisation of the data.
+
+- `static/automated_harvesting/`: This directory contains the static files for the automated_harvesting app.
+
 - `templates/`: This directory contains HTML templates used for rendering the web pages of the application.
   - `actions/`: Contains templates for performing various actions such as adding or modifying records.
   - `datasets_views/`: Templates specifically related to displaying and interacting with datasets.
@@ -109,7 +113,7 @@ Once the data is downloaded, users can specify which columns are static and whic
 
 ### Example: Managing Meteo Data
 
-Consider a dataset containing weather information with the following columns:
+Consider a dataset `meteo` containing weather information with the following columns:
 - `Place`
 - `Date`
 - `Temperature`
