@@ -130,7 +130,7 @@ The system will create two tables:
 
 #### Step 3: Populating the Tables
 
-For data entries like `Bayonne, 2024/06/28, 18째` and `Biarritz, 2024/06/28, 20째`, the following records will be created:
+For data entries like `Bayonne, 2024/06/28, 18` and `Biarritz, 2024/06/28, 20`, the following records will be created:
 
 - In `meteo_s`:
     - `1, Bayonne`
@@ -142,7 +142,7 @@ For data entries like `Bayonne, 2024/06/28, 18째` and `Biarritz, 2024/06/28, 20�
 
 #### Example with New Data
 
-When new data is added, such as `Bayonne, 2024/06/29, 15째` and `Biarritz, 2024/06/29, 19째`, the tables will be updated as follows:
+When new data is added, such as `Bayonne, 2024/06/29, 15` and `Biarritz, 2024/06/29, 19`, the tables will be updated as follows:
 
 - `meteo_s` remains unchanged because the static data (`Bayonne` and `Biarritz`) are already present:
     - `1, Bayonne`
@@ -165,10 +165,10 @@ The `meteo_view` will look like this:
 
 | Place    | Date       | Temperature |
 |----------|------------|-------------|
-| Bayonne  | 2024/06/28 | 18째         |
-| Biarritz | 2024/06/28 | 20째         |
-| Bayonne  | 2024/06/29 | 15째         |
-| Biarritz | 2024/06/29 | 19째         |
+| Bayonne  | 2024/06/28 | 18          |
+| Biarritz | 2024/06/28 | 20          |
+| Bayonne  | 2024/06/29 | 15          |
+| Biarritz | 2024/06/29 | 19          |
 
 
 ## Data Model Overview
