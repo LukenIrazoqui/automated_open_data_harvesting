@@ -169,3 +169,22 @@ The `meteo_view` will look like this:
 | Biarritz | 2024/06/28 | 20°         |
 | Bayonne  | 2024/06/29 | 15°         |
 | Biarritz | 2024/06/29 | 19°         |
+
+
+## Data Model Overview
+
+The data model is designed to efficiently manage and query datasets through a structured approach to metadata and mappings. The model includes tables for branches, sub-branches, regions, sources, precision, and URLs, which are linked to datasets. 
+
+### Table Names and Mappings
+
+- **table_names**: Stores names of tables within the `data` schema.
+- **static_data_table_names**: Stores names of static data tables.
+- **dynamic_data_table_names**: Stores names of dynamic data tables.
+- **dynamic_table_mapping**: Maps static and dynamic tables to each other.
+- **url_table_mapping**: Maps URLs to table names.
+
+### Views
+
+- **view_names**: Stores names of views that join static and dynamic tables for easier data access.
+
+For a detailed visual representation of the data model, please refer to the [data model diagram](./database_model.png).
